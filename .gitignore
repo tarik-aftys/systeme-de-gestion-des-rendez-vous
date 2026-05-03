@@ -13,6 +13,9 @@ frontend/.vite/
 .vscode/
 .idea/
 
+# Local tooling
+.tools/
+
 # OS
 .DS_Store
 Thumbs.db

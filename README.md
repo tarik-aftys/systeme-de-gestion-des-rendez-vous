@@ -1,24 +1,98 @@
-# Système de gestion de prise de rendez-vous en ligne
+# Système de gestion de rendez-vous en ligne
 
-Monorepo simple avec:
-- `backend/`: Spring Boot 3 + Java 17
-- `frontend/`: React 18 + Vite + TailwindCSS
+Plateforme de démonstration pour la gestion de prises de rendez-vous (backend Java / Spring Boot + frontend React). Ce dépôt contient le code source, la configuration Docker minimale et les scripts pour lancer l'application en local.
 
-## Lancement prévu
+**Statut:** prototype — backend opérationnel, entités JPA et API de base implémentées.
 
-Backend:
+**Dépôt:** [systeme-de-gestion-des-rendez-vous](https://github.com/tarik-aftys/systeme-de-gestion-des-rendez-vous)
+
+**Arborescence principale**
+- [backend](backend): Spring Boot 3 (Java 17), JPA/Hibernate, sécurité (JWT planifiée)
+- [frontend](frontend): React 18 + Vite + TailwindCSS
+- [docker-compose.yml](docker-compose.yml): PostgreSQL, Redis, Adminer
+
+**Technologies**
+- Java 17, Spring Boot 3.x
+- Hibernate / JPA
+- PostgreSQL 16
+- React 18, Vite, TailwindCSS
+- Docker / Docker Compose
+
+## Prérequis
+- Java 17
+- Maven (ou utiliser le wrapper si présent)
+- Node.js 18+ et npm
+- Docker & Docker Compose (optionnel mais recommandé pour la DB)
+
+## Installation & lancement (rapide)
+
+1) Démarrer les services Docker (Postgres, Redis, Adminer)
+
 ```bash
-cd backend
-mvn spring-boot:run
+docker compose up -d
 ```
 
-Frontend:
+2) Lancer le backend
+
+```bash
+cd backend
+mvn clean spring-boot:run
+```
+
+- Le backend écoute par défaut sur `http://localhost:8080`.
+- Point de santé: `http://localhost:8080/api/health` → renvoie `{"status":"UP"}`.
+
+3) Lancer le frontend (dev)
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## Étape en cours
+## Base de données
+- Connexion PostgreSQL (développement): `jdbc:postgresql://localhost:5435/appointment_app`
+- Utilisateur / mot de passe: `appointment_user` / `appointment_password`
+- Adminer UI: `http://localhost:8081` (pour vérifier les tables)
 
-Le socle technique est initialisé. La prochaine itération ajoutera les entités JPA, les DTO, puis l’authentification JWT.
+## Exécuter les tests
+
+Backend (JUnit):
+
+```bash
+cd backend
+mvn test
+```
+
+Frontend (si tests ajoutés):
+
+```bash
+cd frontend
+npm test
+```
+
+## Structure du backend
+- `com.appointmentapp.domain`: entités JPA (User, Client, Prestataire, Service, Creneau, RendezVous, Paiement, Avis, Notification)
+- `com.appointmentapp.controller`: endpoints REST
+- `com.appointmentapp.config`: configuration Spring (CORS, sécurité)
+
+## Contribution
+- Fork & clone ce dépôt
+- Crée une branche par fonctionnalité: `feature/ma-fonctionnalite`
+- Ouvre une Pull Request vers `main`
+
+## Bonnes pratiques locales
+- Ne pousse pas de fichiers de tooling locaux ou de secrets (déjà ignorés via `.gitignore`).
+- Utilise les variables d'environnement pour les credentials en production.
+
+## Licence
+MIT — voir [LICENSE](LICENSE) si présent.
+
+---
+
+Si tu veux, je peux:
+- rédiger un `README` en anglais également
+- ajouter des badges (build, coverage)
+- créer un `CONTRIBUTING.md` et un template de PR
+
+Dis-moi ce que tu préfères que j'ajoute ensuite.

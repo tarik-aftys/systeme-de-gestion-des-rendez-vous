@@ -41,6 +41,10 @@ public class Avis {
     @JoinColumn(name = "prestataire_id")
     private Prestataire prestataire;
 
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    private Service service;
+
     public void ajouterAvis() {
         // Ajout d'un avis
     }

@@ -40,6 +40,9 @@ public class Service {
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Creneau> creneaux = new HashSet<>();
 
+    @OneToMany(mappedBy = "service")
+    private Set<RendezVous> rendezVous = new HashSet<>();
+
     public void modifierPrix(Double nouveauPrix) {
         this.prix = nouveauPrix;
     }

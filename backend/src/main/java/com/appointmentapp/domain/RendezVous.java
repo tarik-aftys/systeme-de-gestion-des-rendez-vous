@@ -33,6 +33,10 @@ public class RendezVous {
     @JoinColumn(name = "prestataire_id")
     private Prestataire prestataire;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "service_id")
+    private Service service;
+
     @OneToOne(optional = false, cascade = CascadeType.ALL)
     @JoinColumn(name = "creneau_id", unique = true)
     private Creneau creneau;

@@ -18,9 +18,6 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 public class Client extends User {
     @Column(nullable = false)
-    private String telephone;
-
-    @Column(nullable = false)
     private String adresse;
 
     @Column(nullable = false)

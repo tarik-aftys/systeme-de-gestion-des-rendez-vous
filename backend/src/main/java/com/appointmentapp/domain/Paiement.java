@@ -6,7 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+
+import com.appointmentapp.domain.enums.StatutPaiement;
 
 @Entity
 @Table(name = "paiements")
@@ -15,17 +16,22 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Paiement {
     @Id
-    @GeneratedValue
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false)
-    private LocalDateTime date;
+    private LocalDateTime datePaiement;
 
     @Column(nullable = false)
-    private Long montant;
+    private Double montant;
 
     @Column(nullable = false)
-    private String nCompte;
+    @Enumerated(EnumType.STRING)
+    private StatutPaiement statut;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "client_id")
+    private Client client;
 
     @OneToOne(mappedBy = "paiement")
     private RendezVous rendezVous;

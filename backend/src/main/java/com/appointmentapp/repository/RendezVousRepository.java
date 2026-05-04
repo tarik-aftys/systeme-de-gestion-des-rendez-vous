@@ -3,6 +3,7 @@ package com.appointmentapp.repository;
 import com.appointmentapp.domain.RendezVous;
 import com.appointmentapp.domain.Client;
 import com.appointmentapp.domain.Prestataire;
+import com.appointmentapp.domain.Service;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,4 +13,5 @@ import java.util.List;
 public interface RendezVousRepository extends JpaRepository<RendezVous, Long> {
     List<RendezVous> findByClient(Client client);
     List<RendezVous> findByPrestataire(Prestataire prestataire);
+    List<RendezVous> findByService(Service service);
 }

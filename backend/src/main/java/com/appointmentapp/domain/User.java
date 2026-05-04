@@ -29,6 +29,12 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column
+    private String telephone;
+
+    @Column(nullable = false)
+    private Boolean estSupprime = Boolean.FALSE;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RoleUser role;

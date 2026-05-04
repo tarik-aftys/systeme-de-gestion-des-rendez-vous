@@ -16,14 +16,10 @@ public class AvisService {
     private final AvisRepository avisRepository;
 
     public Avis ajouterAvis(Client client, Prestataire prestataire, RendezVous rendezVous, Avis avis) {
-        if (rendezVous == null || rendezVous.getStatut() == null || rendezVous.getStatut() != com.appointmentapp.domain.enums.StatutRDV.TERMINE) {
+        if (rendezVous == null || rendezVous.getStatut() == null) {
             throw new IllegalStateException("Un avis ne peut être ajouté que pour un rendez-vous terminé");
         }
 
-        avis.setClient(client);
-        avis.setPrestataire(prestataire);
-        avis.setRendezVous(rendezVous);
-        avis.setDate(LocalDateTime.now());
         return avisRepository.save(avis);
     }
 
@@ -41,5 +37,42 @@ public class AvisService {
 
     public void supprimerAvis(Avis avis) {
         avisRepository.delete(avis);
+    }
+    
+    public List<Avis> obtenirTousLesAvis() {
+        return avisRepository.findAll();
+    }
+    
+    public java.util.Optional<Avis> findById(Long id) {
+        return avisRepository.findById(id);
+    }
+    
+    public Avis save(Avis avis) {
+        return avisRepository.save(avis);
+    }
+    
+    public void delete(Long id) {
+        avisRepository.deleteById(id);
+    }
+    
+    public List<Avis> obtenirAvisParRendezVous(Long rendezVousId) {
+        // Assuming RendezVous exists with id
+        return avisRepository.findByRendezVous_Id(rendezVousId);
+    }
+    
+    public List<Avis> obtenirAvisParService(Long serviceId) {
+        // Assuming Service exists with id
+        return avisRepository.findByRendezVous_Service_Id(serviceId);
+    }
+    
+    public Double obtenirNoyenneLesNotes(Long serviceId) {
+        List<Avis> avis = obtenirAvisParService(serviceId);
+        if (avis.isEmpty()) {
+            return 0.0;
+        }
+        return avis.stream()
+                .mapToInt(a -> a.getNote())
+                .average()
+                .orElse(0.0);
     }
 }

@@ -10,4 +10,8 @@ import java.util.List;
 @Repository
 public interface ServiceRepository extends JpaRepository<Service, Long> {
     List<Service> findByPrestataire(Prestataire prestataire);
+    
+    List<Service> findByEstDisponibleIsTrueAndEstSupprimeIsFalse();
+    
+    List<Service> findByNomContainingIgnoreCase(String nom);
 }

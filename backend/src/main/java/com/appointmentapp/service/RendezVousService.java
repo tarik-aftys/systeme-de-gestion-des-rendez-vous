@@ -76,4 +76,20 @@ public class RendezVousService {
         rendezVous.terminer();
         return rendezVousRepository.save(rendezVous);
     }
+    
+    public List<RendezVous> obtenirTousLesRendezVous() {
+        return rendezVousRepository.findAll();
+    }
+    
+    public java.util.Optional<RendezVous> findById(Long id) {
+        return rendezVousRepository.findById(id);
+    }
+    
+    public RendezVous save(RendezVous rendezVous) {
+        return rendezVousRepository.save(rendezVous);
+    }
+    
+    public void delete(Long id) {
+        rendezVousRepository.deleteById(id);
+    }
 }

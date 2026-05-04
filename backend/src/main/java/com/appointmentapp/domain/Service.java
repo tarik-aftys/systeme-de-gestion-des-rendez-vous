@@ -33,6 +33,12 @@ public class Service {
     @Column(nullable = false)
     private Double prix;
 
+    @Column
+    private Boolean estDisponible = true;
+
+    @Column
+    private Boolean estSupprime = false;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "prestataire_id")
     private Prestataire prestataire;

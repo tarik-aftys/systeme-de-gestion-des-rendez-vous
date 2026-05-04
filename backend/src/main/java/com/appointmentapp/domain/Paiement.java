@@ -36,6 +36,9 @@ public class Paiement {
     @OneToOne(mappedBy = "paiement")
     private RendezVous rendezVous;
 
+    @Column
+    private String methodePaiement;
+
     public boolean estPayer() {
         // Verification si le paiement est effectue
         return true;

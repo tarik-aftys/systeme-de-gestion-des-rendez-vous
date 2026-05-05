@@ -3,7 +3,13 @@ package com.appointmentapp.controller;
 import com.appointmentapp.dto.RendezVousCreateDTO;
 import com.appointmentapp.dto.RendezVousDTO;
 import com.appointmentapp.domain.RendezVous;
+import com.appointmentapp.domain.Creneau;
+import com.appointmentapp.domain.Prestataire;
+import com.appointmentapp.domain.Service;
 import com.appointmentapp.domain.enums.StatutRDV;
+import com.appointmentapp.repository.CreneauRepository;
+import com.appointmentapp.repository.PrestataireRepository;
+import com.appointmentapp.repository.ServiceRepository;
 import com.appointmentapp.service.RendezVousService;
 import com.appointmentapp.service.ClientService;
 import jakarta.validation.Valid;
@@ -27,6 +33,9 @@ public class RendezVousController {
     
     private final RendezVousService rendezVousService;
     private final ClientService clientService;
+    private final PrestataireRepository prestataireRepository;
+    private final ServiceRepository serviceRepository;
+    private final CreneauRepository creneauRepository;
     
     /**
      * GET: Retrieve all appointments
@@ -78,17 +87,34 @@ public class RendezVousController {
      */
     @PostMapping
     public ResponseEntity<RendezVousDTO> createAppointment(@Valid @RequestBody RendezVousCreateDTO createDTO) {
-        try {
-            RendezVous appointment = rendezVousService.creerRendezVous(
-                    clientService.findById(createDTO.getClientId()).orElseThrow(),
-                    null, // Provider - to be fetched from repository if needed
-                    null, // Service - to be fetched from repository if needed
-                    null  // Creneau - to be fetched from repository if needed
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(appointment));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+        return clientService.findById(createDTO.getClientId())
+                .flatMap(client -> prestataireRepository.findById(createDTO.getPrestataireId())
+                        .flatMap(prestataire -> serviceRepository.findById(createDTO.getServiceId())
+                                .flatMap(service -> creneauRepository.findById(createDTO.getCreneauId())
+                                        .map(creneau -> new Object[]{client, prestataire, service, creneau}))))
+                .map(data -> {
+                    com.appointmentapp.domain.Client client = (com.appointmentapp.domain.Client) data[0];
+                    Prestataire prestataire = (Prestataire) data[1];
+                    Service service = (Service) data[2];
+                    Creneau creneau = (Creneau) data[3];
+
+                    if (creneau.getPrestataire() != null && !creneau.getPrestataire().getId().equals(prestataire.getId())) {
+                        return ResponseEntity.badRequest().<RendezVousDTO>build();
+                    }
+                    if (creneau.getService() != null && !creneau.getService().getId().equals(service.getId())) {
+                        return ResponseEntity.badRequest().<RendezVousDTO>build();
+                    }
+
+                    RendezVous appointment = rendezVousService.creerRendezVous(
+                            client,
+                            prestataire,
+                            service,
+                            creneau,
+                            createDTO.getDate()
+                    );
+                    return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(appointment));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     /**

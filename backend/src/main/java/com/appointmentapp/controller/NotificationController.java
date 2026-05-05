@@ -5,6 +5,7 @@ import com.appointmentapp.domain.Notification;
 import com.appointmentapp.domain.User;
 import com.appointmentapp.service.NotificationService;
 import com.appointmentapp.repository.UserRepository;
+import com.appointmentapp.repository.NotificationRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ import java.util.List;
 public class NotificationController {
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Notification>> getByUser(@PathVariable Long userId) {
@@ -29,18 +31,18 @@ public class NotificationController {
 
     @PostMapping
     public ResponseEntity<Notification> send(@Valid @RequestBody NotificationCreateDTO dto) {
-        User user = userRepository.findById(dto.getUserId()).orElse(null);
-        if (user == null) return ResponseEntity.badRequest().build();
-        Notification n = notificationService.envoyer(user, dto.getType(), dto.getContenu());
-        return ResponseEntity.status(HttpStatus.CREATED).body(n);
+        return userRepository.findById(dto.getUserId())
+                .map(user -> {
+                    Notification n = notificationService.envoyer(user, dto.getType(), dto.getContenu());
+                    return ResponseEntity.status(HttpStatus.CREATED).body(n);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{id}/read")
     public ResponseEntity<Notification> markRead(@PathVariable Long id) {
-        // find and mark read via repository through service
-        java.util.Optional<Notification> opt = notificationService.obtenirNotifications(null).stream().filter(n -> n.getId().equals(id)).findFirst();
-        if (opt.isEmpty()) return ResponseEntity.notFound().build();
-        Notification updated = notificationService.marquerCommeLue(opt.get());
-        return ResponseEntity.ok(updated);
+        return notificationRepository.findById(id)
+                .map(notification -> ResponseEntity.ok(notificationService.marquerCommeLue(notification)))
+                .orElse(ResponseEntity.notFound().build());
     }
 }

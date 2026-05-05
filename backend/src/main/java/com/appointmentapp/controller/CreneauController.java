@@ -1,7 +1,11 @@
 package com.appointmentapp.controller;
 
+import com.appointmentapp.dto.CreneauCreateDTO;
 import com.appointmentapp.domain.Creneau;
 import com.appointmentapp.domain.Prestataire;
+import com.appointmentapp.domain.Service;
+import com.appointmentapp.repository.CreneauRepository;
+import com.appointmentapp.repository.ServiceRepository;
 import com.appointmentapp.service.CreneauService;
 import com.appointmentapp.repository.PrestataireRepository;
 import jakarta.validation.Valid;
@@ -19,21 +23,35 @@ import java.util.List;
 public class CreneauController {
     private final CreneauService creneauService;
     private final PrestataireRepository prestataireRepository;
+    private final ServiceRepository serviceRepository;
+    private final CreneauRepository creneauRepository;
 
     @GetMapping
     public ResponseEntity<List<Creneau>> getAll() {
-        return ResponseEntity.ok(creneauService.obtenirCreneauxDisponibles(null));
+        return ResponseEntity.ok(creneauRepository.findAll());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Creneau> getById(@PathVariable Long id) {
-        return ResponseEntity.of(java.util.Optional.ofNullable(creneauService.obtenirCreneauxParService(null).stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null)));
+        return creneauRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Creneau> create(@Valid @RequestBody Creneau creneau) {
-        Creneau saved = creneauService.creerCreneau(creneau);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    public ResponseEntity<Creneau> create(@Valid @RequestBody CreneauCreateDTO dto) {
+        return prestataireRepository.findById(dto.getPrestataireId())
+                .flatMap(prestataire -> serviceRepository.findById(dto.getServiceId())
+                        .map(service -> {
+                            Creneau creneau = new Creneau();
+                            creneau.setDateDebut(dto.getDateDebut());
+                            creneau.setDateFin(dto.getDateFin());
+                            creneau.setPrestataire(prestataire);
+                            creneau.setService(service);
+                            Creneau saved = creneauService.creerCreneau(creneau);
+                            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+                        }))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/prestataire/{prestataireId}")
@@ -45,7 +63,11 @@ public class CreneauController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        // simple deletion via repository not exposed in service; using save to mark removed is better
-        return ResponseEntity.noContent().build();
+        return creneauRepository.findById(id)
+                .map(creneau -> {
+                    creneauRepository.delete(creneau);
+                    return ResponseEntity.noContent().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

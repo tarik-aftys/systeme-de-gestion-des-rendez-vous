@@ -22,7 +22,7 @@ public class RendezVousService {
     private final PaiementRepository paiementRepository;
     private final CreneauService creneauService;
 
-    public RendezVous creerRendezVous(Client client, Prestataire prestataire, Service service, Creneau creneau) {
+    public RendezVous creerRendezVous(Client client, Prestataire prestataire, Service service, Creneau creneau, LocalDateTime date) {
         if (!creneauService.verifierDisponibilite(creneau)) {
             throw new IllegalStateException("Le créneau n'est pas disponible");
         }
@@ -35,7 +35,7 @@ public class RendezVousService {
         paiement = paiementRepository.save(paiement);
 
         RendezVous rendezVous = new RendezVous();
-        rendezVous.setDate(LocalDateTime.now());
+        rendezVous.setDate(date != null ? date : LocalDateTime.now());
         rendezVous.setStatut(StatutRDV.EN_ATTENTE);
         rendezVous.setClient(client);
         rendezVous.setPrestataire(prestataire);

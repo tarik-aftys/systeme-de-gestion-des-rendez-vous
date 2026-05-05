@@ -1,7 +1,10 @@
 package com.appointmentapp.controller;
 
+import com.appointmentapp.dto.ServiceCreateDTO;
 import com.appointmentapp.dto.ServiceDTO;
+import com.appointmentapp.domain.Prestataire;
 import com.appointmentapp.domain.Service;
+import com.appointmentapp.repository.PrestataireRepository;
 import com.appointmentapp.service.AppointmentServiceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
 public class ServiceController {
     
     private final AppointmentServiceService serviceService;
+    private final PrestataireRepository prestataireRepository;
     
     /**
      * GET: Retrieve all services
@@ -82,17 +86,23 @@ public class ServiceController {
      * @return Created service with 201 status
      */
     @PostMapping
-    public ResponseEntity<ServiceDTO> createService(@Valid @RequestBody ServiceDTO createDTO) {
-        Service service = new Service();
-        service.setNom(createDTO.getNom());
-        service.setDescription(createDTO.getDescription());
-        service.setPrix(createDTO.getPrix());
-        service.setDuree(createDTO.getDuree());
-        service.setEstDisponible(createDTO.getEstDisponible() != null ? createDTO.getEstDisponible() : true);
-        service.setEstSupprime(false);
-        
-        Service savedService = serviceService.save(service);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedService));
+    public ResponseEntity<ServiceDTO> createService(@Valid @RequestBody ServiceCreateDTO createDTO) {
+        return prestataireRepository.findById(createDTO.getPrestataireId())
+                .map(prestataire -> {
+                    Service service = new Service();
+                    service.setNom(createDTO.getNom());
+                    service.setDescription(createDTO.getDescription());
+                    service.setPrix(createDTO.getPrix());
+                    service.setDuree(createDTO.getDuree());
+                    service.setEstDisponible(createDTO.getEstDisponible() != null ? createDTO.getEstDisponible() : true);
+                    service.setEstSupprime(false);
+                    service.setPrestataire(prestataire);
+                    service.setStatut("ACTIF");
+
+                    Service savedService = serviceService.save(service);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedService));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     /**
@@ -112,6 +122,10 @@ public class ServiceController {
                     service.setDescription(updateDTO.getDescription());
                     service.setPrix(updateDTO.getPrix());
                     service.setDuree(updateDTO.getDuree());
+                    if (updateDTO.getPrestataireId() != null) {
+                        prestataireRepository.findById(updateDTO.getPrestataireId())
+                                .ifPresent(service::setPrestataire);
+                    }
                     Service updated = serviceService.save(service);
                     return ResponseEntity.ok(convertToDTO(updated));
                 })
@@ -144,8 +158,12 @@ public class ServiceController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteService(@PathVariable Long id) {
-        serviceService.delete(id);
-        return ResponseEntity.noContent().build();
+        return serviceService.findById(id)
+                .map(service -> {
+                    serviceService.delete(id);
+                    return ResponseEntity.noContent().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     /**
@@ -159,6 +177,9 @@ public class ServiceController {
         dto.setPrix(service.getPrix());
         dto.setDuree(service.getDuree());
         dto.setEstDisponible(service.getEstDisponible());
+        if (service.getPrestataire() != null) {
+            dto.setPrestataireId(service.getPrestataire().getId());
+        }
         return dto;
     }
 }

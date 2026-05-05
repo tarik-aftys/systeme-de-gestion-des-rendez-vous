@@ -1,9 +1,12 @@
 package com.appointmentapp.controller;
 
+import com.appointmentapp.dto.PaiementCreateDTO;
 import com.appointmentapp.dto.PaiementDTO;
 import com.appointmentapp.domain.Paiement;
+import com.appointmentapp.domain.RendezVous;
 import com.appointmentapp.domain.enums.StatutPaiement;
 import com.appointmentapp.service.PaiementService;
+import com.appointmentapp.service.RendezVousService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class PaiementController {
     
     private final PaiementService paiementService;
+    private final RendezVousService rendezVousService;
     
     /**
      * GET: Retrieve all payments
@@ -88,19 +92,23 @@ public class PaiementController {
      * @return Created payment with 201 status
      */
     @PostMapping
-    public ResponseEntity<PaiementDTO> createPayment(@Valid @RequestBody PaiementDTO createDTO) {
-        try {
-            Paiement paiement = new Paiement();
-            paiement.setMontant(createDTO.getMontant());
-            paiement.setDatePaiement(createDTO.getDatePaiement());
-            paiement.setStatut(createDTO.getStatut() != null ? createDTO.getStatut() : StatutPaiement.EN_ATTENTE);
-            paiement.setMethodePaiement(createDTO.getMethodePaiement());
-            
-            Paiement savedPaiement = paiementService.save(paiement);
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedPaiement));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<PaiementDTO> createPayment(@Valid @RequestBody PaiementCreateDTO createDTO) {
+        return rendezVousService.findById(createDTO.getRendezVousId())
+                .map(rendezVous -> {
+                    Paiement paiement = new Paiement();
+                    paiement.setMontant(createDTO.getMontant());
+                    paiement.setDatePaiement(createDTO.getDatePaiement());
+                    paiement.setStatut(createDTO.getStatut() != null ? createDTO.getStatut() : StatutPaiement.EN_ATTENTE);
+                    paiement.setMethodePaiement(createDTO.getMethodePaiement());
+                    paiement.setClient(rendezVous.getClient());
+
+                    Paiement savedPaiement = paiementService.save(paiement);
+                    rendezVous.setPaiement(savedPaiement);
+                    rendezVousService.save(rendezVous);
+                    savedPaiement.setRendezVous(rendezVous);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedPaiement));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     /**
@@ -171,6 +179,9 @@ public class PaiementController {
         dto.setDatePaiement(paiement.getDatePaiement());
         dto.setStatut(paiement.getStatut());
         dto.setMethodePaiement(paiement.getMethodePaiement());
+        if (paiement.getRendezVous() != null) {
+            dto.setRendezVousId(paiement.getRendezVous().getId());
+        }
         return dto;
     }
 }

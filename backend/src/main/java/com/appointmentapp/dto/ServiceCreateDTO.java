@@ -7,31 +7,26 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
-
-/**
- * DTO for Service entity
- * Represents an available service offered by the appointment system
- */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceDTO {
-    
-    private Long id;
-    
+public class ServiceCreateDTO {
     @NotBlank(message = "Service name cannot be blank")
     private String nom;
-    
+
+    @NotBlank(message = "Description cannot be blank")
     private String description;
-    
+
     @NotNull(message = "Price cannot be null")
     @Positive(message = "Price must be positive")
     private Double prix;
-    
+
+    @NotNull(message = "Provider ID cannot be null")
     private Long prestataireId;
 
+    @NotNull(message = "Duration cannot be null")
+    @Positive(message = "Duration must be positive")
     private Integer duree;
-    
+
     private Boolean estDisponible = true;
 }

@@ -1,8 +1,16 @@
 package com.appointmentapp.controller;
 
+import com.appointmentapp.dto.AvisCreateDTO;
 import com.appointmentapp.dto.AvisDTO;
 import com.appointmentapp.domain.Avis;
+import com.appointmentapp.domain.Client;
+import com.appointmentapp.domain.Prestataire;
+import com.appointmentapp.domain.RendezVous;
+import com.appointmentapp.domain.Service;
 import com.appointmentapp.service.AvisService;
+import com.appointmentapp.repository.ClientRepository;
+import com.appointmentapp.repository.RendezVousRepository;
+import com.appointmentapp.repository.ServiceRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +32,9 @@ import java.util.stream.Collectors;
 public class AvisController {
     
     private final AvisService avisService;
+    private final ClientRepository clientRepository;
+    private final RendezVousRepository rendezVousRepository;
+    private final ServiceRepository serviceRepository;
     
     /**
      * GET: Retrieve all reviews
@@ -95,19 +106,40 @@ public class AvisController {
      * @return Created review with 201 status
      */
     @PostMapping
-    public ResponseEntity<AvisDTO> createReview(@Valid @RequestBody AvisDTO createDTO) {
-        try {
-            Avis avis = new Avis();
-            avis.setNote(createDTO.getNote());
-            avis.setCommentaire(createDTO.getCommentaire());
-            avis.setDate(java.time.LocalDateTime.now());
-            avis.setStatut("PUBLIE");
-            
-            Avis savedAvis = avisService.save(avis);
-            return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedAvis));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+    public ResponseEntity<AvisDTO> createReview(@Valid @RequestBody AvisCreateDTO createDTO) {
+        return clientRepository.findById(createDTO.getClientId())
+                .flatMap(client -> rendezVousRepository.findById(createDTO.getRendezVousId())
+                        .flatMap(rendezVous -> serviceRepository.findById(createDTO.getServiceId())
+                                .map(service -> new Object[]{client, rendezVous, service})))
+                .map(data -> {
+                    Client client = (Client) data[0];
+                    RendezVous rendezVous = (RendezVous) data[1];
+                    Service service = (Service) data[2];
+
+                    if (rendezVous.getClient() != null && !rendezVous.getClient().getId().equals(client.getId())) {
+                        return ResponseEntity.badRequest().<AvisDTO>build();
+                    }
+                    if (rendezVous.getService() != null && !rendezVous.getService().getId().equals(service.getId())) {
+                        return ResponseEntity.badRequest().<AvisDTO>build();
+                    }
+                    if (rendezVous.getPrestataire() == null) {
+                        return ResponseEntity.badRequest().<AvisDTO>build();
+                    }
+
+                    Avis avis = new Avis();
+                    avis.setNote(createDTO.getNote());
+                    avis.setCommentaire(createDTO.getCommentaire());
+                    avis.setDate(java.time.LocalDateTime.now());
+                    avis.setStatut("PUBLIE");
+                    avis.setClient(client);
+                    avis.setRendezVous(rendezVous);
+                    avis.setPrestataire((Prestataire) rendezVous.getPrestataire());
+                    avis.setService(service);
+
+                    Avis savedAvis = avisService.save(avis);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedAvis));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
     
     /**

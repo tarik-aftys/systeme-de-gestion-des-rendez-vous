@@ -1,5 +1,6 @@
 package com.appointmentapp.controller;
 
+import com.appointmentapp.domain.enums.RoleUser;
 import com.appointmentapp.dto.ClientCreateDTO;
 import com.appointmentapp.dto.ClientDTO;
 import com.appointmentapp.domain.Client;
@@ -64,6 +65,7 @@ public class ClientController {
         client.setTelephone(createDTO.getTelephone());
         client.setAdresse(createDTO.getAdresse());
         client.setDateNaissance(createDTO.getDateNaissance());
+        client.setRole(RoleUser.CLIENT);
         client.setStatut("ACTIF");
         client.setEstSupprime(false);
         

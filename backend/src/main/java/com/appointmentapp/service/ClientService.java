@@ -4,6 +4,7 @@ import com.appointmentapp.domain.Client;
 import com.appointmentapp.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,10 +43,15 @@ public class ClientService {
     }
     
     /**
-     * Save or update a client
+     * Save or update a client and initialize relationships
      */
+    @Transactional
     public Client save(Client client) {
-        return clientRepository.save(client);
+        Client saved = clientRepository.save(client);
+        // Force initialization of lazy-loaded collections
+        saved.getRendezVous().size();
+        saved.getAvis().size();
+        return saved;
     }
     
     /**

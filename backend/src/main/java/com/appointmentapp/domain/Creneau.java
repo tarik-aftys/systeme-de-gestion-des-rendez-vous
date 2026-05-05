@@ -1,5 +1,6 @@
 package com.appointmentapp.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.appointmentapp.domain.enums.StatutCreneau;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,13 +31,16 @@ public class Creneau {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "prestataire_id")
+    @JsonIgnore
     private Prestataire prestataire;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "service_id")
+    @JsonIgnore
     private Service service;
 
     @OneToOne(mappedBy = "creneau")
+    @JsonIgnore
     private RendezVous rendezVous;
 
     public boolean verifierDisponibilite() {

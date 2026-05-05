@@ -178,6 +178,52 @@ Marquer un paiement comme payé:
 curl -X PATCH "http://localhost:8080/api/paiements/42/status?newStatus=PAYE"
 ```
 
+## Tests d'intégration
+
+Les tests d'intégration couvrent les flux principaux de l'API : création de client, service, rendez-vous et paiement.
+
+### Lancer tous les tests
+
+```bash
+cd backend
+mvn clean verify
+```
+
+### Lancer uniquement les tests d'intégration
+
+```bash
+cd backend
+mvn test -Dtest=AppointmentApiIntegrationTest
+```
+
+### Lancer les tests sans accès à la BD réelle (H2 en mémoire)
+
+```bash
+cd backend
+mvn test -Dspring.profiles.active=test
+```
+
+### Configuration de sécurité pour les tests
+
+Les tests utilisent HTTP Basic Authentication avec :
+- **Identifiant:** admin
+- **Mot de passe:** admin123
+
+Les endpoints GET sont publics (pas d'authentification requise).
+Les endpoints POST/PUT/PATCH/DELETE nécessitent l'authentification HTTP Basic.
+
+### Cas de test couverts
+
+- ✅ Créer un client valide
+- ✅ Récupérer tous les clients (public)
+- ✅ Créer un service (résout le prestataire)
+- ✅ Valider le refus des POST sans authentification
+- ✅ Rejeter les validations échouées (email invalide, etc.)
+- ✅ Créer un créneau (valide dates et entités liées)
+- ✅ Récupérer les paiements (public)
+- ✅ Vérifier la sécurité des endpoints (GET public, POST protégé)
+- ✅ Créer un utilisateur système
+
 ---
 
 Pour ajouter ce fichier au commit:

@@ -11,25 +11,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PrestataireCreateDTO {
-    @Email
-    @NotBlank
+    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email cannot be blank")
     private String email;
 
-    @NotBlank
-    @Size(min = 2)
+    @NotBlank(message = "Name cannot be blank")
+    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
     private String nom;
 
-    @NotBlank
+    @NotBlank(message = "Password cannot be blank")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
 
+    @NotBlank(message = "Phone number cannot be blank")
+    @Size(min = 8, max = 20, message = "Phone number must be between 8 and 20 characters")
     private String telephone;
 
-    @NotBlank
+    @NotBlank(message = "Secteur cannot be blank")
     private String secteur;
 
-    @NotBlank
+    @NotBlank(message = "Localisation cannot be blank")
     private String localisation;
 
-    @NotBlank
+    @NotBlank(message = "Horaires cannot be blank")
     private String horaires;
 }

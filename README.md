@@ -9,12 +9,12 @@ Plateforme de démonstration pour la gestion de prises de rendez-vous (backend J
 **Arborescence principale**
 - [backend](backend): Spring Boot 3 (Java 17), JPA/Hibernate, sécurité (JWT planifiée)
 - [frontend](frontend): React 18 + Vite + TailwindCSS
-- [docker-compose.yml](docker-compose.yml): PostgreSQL, Redis, Adminer
+- [docker-compose.yml](docker-compose.yml): MySQL, Redis, Adminer
 
 **Technologies**
 - Java 17, Spring Boot 3.x
 - Hibernate / JPA
-- PostgreSQL 16
+- MySQL 8
 - React 18, Vite, TailwindCSS
 - Docker / Docker Compose
 
@@ -26,7 +26,7 @@ Plateforme de démonstration pour la gestion de prises de rendez-vous (backend J
 
 ## Installation & lancement (rapide)
 
-1) Démarrer les services Docker (Postgres, Redis, Adminer)
+1) Démarrer les services Docker (MySQL, Redis, Adminer)
 
 ```bash
 docker compose up -d
@@ -51,7 +51,7 @@ npm run dev
 ```
 
 ## Base de données
-- Connexion PostgreSQL (développement): `jdbc:postgresql://localhost:5435/appointment_app`
+- Connexion MySQL (développement): `jdbc:mysql://localhost:3306/appointment_app`
 - Utilisateur / mot de passe: `appointment_user` / `appointment_password`
 - Adminer UI: `http://localhost:8081` (pour vérifier les tables)
 

@@ -1,15 +1,16 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: appointment-postgres
+  mysql:
+    image: mysql:8.0
+    container_name: appointment-mysql
     environment:
-      POSTGRES_DB: appointment_app
-      POSTGRES_USER: appointment_user
-      POSTGRES_PASSWORD: appointment_password
+      MYSQL_DATABASE: appointment_app
+      MYSQL_USER: appointment_user
+      MYSQL_PASSWORD: appointment_password
+      MYSQL_ROOT_PASSWORD: root_password
     ports:
-      - "5435:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
 
   redis:
     image: redis:7-alpine
@@ -21,9 +22,9 @@ services:
     image: adminer:latest
     container_name: appointment-adminer
     depends_on:
-      - postgres
+      - mysql
     ports:
       - "8081:8080"
 
 volumes:
-  postgres_data:
+  mysql_data:

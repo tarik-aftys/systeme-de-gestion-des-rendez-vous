@@ -7,6 +7,7 @@ import com.appointmentapp.domain.enums.StatutPaiement;
 import com.appointmentapp.domain.enums.RoleUser;
 import com.appointmentapp.repository.PrestataireRepository;
 import com.appointmentapp.repository.ServiceRepository;
+import com.appointmentapp.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,10 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import org.springframework.http.HttpHeaders;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,14 +44,21 @@ public class AppointmentApiIntegrationTest {
     @Autowired
     private ServiceRepository serviceRepository;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
     private String adminAuth = "admin:admin123";
     private static final String API_BASE = "/api";
     private static long emailSequence = 0;
     private Long fixturePrestataireId;
     private Long fixtureServiceId;
+    private String jwtToken;
 
     @BeforeEach
     public void setUp() {
+        // Generate JWT token directly for admin user (no need to call login API in tests)
+        jwtToken = jwtTokenProvider.generateToken("admin");
+        
         Prestataire prestataire = new Prestataire();
         prestataire.setEmail(nextEmail("prestataire"));
         prestataire.setNom("Prestataire Fixture");
@@ -83,6 +91,12 @@ public class AppointmentApiIntegrationTest {
         return prefix + emailSequence + "@example.com";
     }
 
+    private HttpHeaders getAuthenticatedHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        return headers;
+    }
+
     /**
      * Test 1: Create a Client
      */
@@ -96,9 +110,9 @@ public class AppointmentApiIntegrationTest {
         clientDTO.setAdresse("123 Test Street");
         clientDTO.setDateNaissance(LocalDate.of(1995, 5, 15));
 
+        HttpEntity<ClientCreateDTO> request = new HttpEntity<>(clientDTO, getAuthenticatedHeaders());
         ResponseEntity<ClientDTO> response = restTemplate
-                .withBasicAuth("admin", "admin123")
-                .postForEntity(API_BASE + "/clients", clientDTO, ClientDTO.class);
+                .postForEntity(API_BASE + "/clients", request, ClientDTO.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -131,9 +145,9 @@ public class AppointmentApiIntegrationTest {
         serviceDTO.setEstDisponible(true);
         serviceDTO.setPrestataireId(fixturePrestataireId);
 
+        HttpEntity<ServiceCreateDTO> request = new HttpEntity<>(serviceDTO, getAuthenticatedHeaders());
         ResponseEntity<ServiceDTO> response = restTemplate
-                .withBasicAuth("admin", "admin123")
-                .postForEntity(API_BASE + "/services", serviceDTO, ServiceDTO.class);
+                .postForEntity(API_BASE + "/services", request, ServiceDTO.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -170,7 +184,8 @@ public class AppointmentApiIntegrationTest {
         ResponseEntity<ClientDTO> response = restTemplate
                 .postForEntity(API_BASE + "/clients", clientDTO, ClientDTO.class);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        // Spring Security returns 403 Forbidden when authentication is required but missing
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
     /**
@@ -186,9 +201,9 @@ public class AppointmentApiIntegrationTest {
         clientDTO.setAdresse("789 Test Ave");
         clientDTO.setDateNaissance(LocalDate.of(1990, 6, 20));
 
+        HttpEntity<ClientCreateDTO> request = new HttpEntity<>(clientDTO, getAuthenticatedHeaders());
         ResponseEntity<Object> response = restTemplate
-                .withBasicAuth("admin", "admin123")
-                .postForEntity(API_BASE + "/clients", clientDTO, Object.class);
+                .postForEntity(API_BASE + "/clients", request, Object.class);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
@@ -204,9 +219,9 @@ public class AppointmentApiIntegrationTest {
         creneauDTO.setPrestataireId(fixturePrestataireId);
         creneauDTO.setServiceId(fixtureServiceId);
 
+        HttpEntity<CreneauCreateDTO> request = new HttpEntity<>(creneauDTO, getAuthenticatedHeaders());
         ResponseEntity<Object> response = restTemplate
-                .withBasicAuth("admin", "admin123")
-                .postForEntity(API_BASE + "/creneaux", creneauDTO, Object.class);
+                .postForEntity(API_BASE + "/creneaux", request, Object.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -242,11 +257,10 @@ public class AppointmentApiIntegrationTest {
     @Test
     public void testUpdatePaymentWithInvalidStatus() {
         ResponseEntity<Object> response = restTemplate
-                .withBasicAuth("admin", "admin123")
                 .exchange(
                         API_BASE + "/paiements/999/status?newStatus=INVALID",
                         HttpMethod.PATCH,
-                        HttpEntity.EMPTY,
+                        new HttpEntity<>(getAuthenticatedHeaders()),
                         Object.class);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -284,9 +298,9 @@ public class AppointmentApiIntegrationTest {
         userDTO.setRole(RoleUser.ADMIN);
         userDTO.setStatut("ACTIF");
 
+        HttpEntity<UserCreateDTO> request = new HttpEntity<>(userDTO, getAuthenticatedHeaders());
         ResponseEntity<UserDTO> response = restTemplate
-                .withBasicAuth("admin", "admin123")
-                .postForEntity(API_BASE + "/users", userDTO, UserDTO.class);
+                .postForEntity(API_BASE + "/users", request, UserDTO.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -306,9 +320,9 @@ public class AppointmentApiIntegrationTest {
         userDTO.setRole(RoleUser.ADMIN);
         userDTO.setStatut("ACTIF");
 
+        HttpEntity<UserCreateDTO> createRequest = new HttpEntity<>(userDTO, getAuthenticatedHeaders());
         ResponseEntity<UserDTO> createResponse = restTemplate
-            .withBasicAuth("admin", "admin123")
-            .postForEntity(API_BASE + "/users", userDTO, UserDTO.class);
+            .postForEntity(API_BASE + "/users", createRequest, UserDTO.class);
 
         assertEquals(HttpStatus.CREATED, createResponse.getStatusCode());
         assertNotNull(createResponse.getBody());

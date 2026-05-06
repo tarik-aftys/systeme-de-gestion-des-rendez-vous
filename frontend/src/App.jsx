@@ -1,30 +1,155 @@
-export default function App() {
-  return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-6 py-10 text-slate-100">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
-        <section className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/30 backdrop-blur">
-          <p className="text-sm uppercase tracking-[0.3em] text-sky-300">Système de gestion de rendez-vous</p>
-          <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">
-            Plateforme de réservation claire, rapide et structurée.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base text-slate-300 sm:text-lg">
-            Base frontend React + Tailwind prête pour brancher l’authentification, la recherche de prestataires,
-            la réservation et les tableaux de bord.
-          </p>
-        </section>
+import { useEffect, useMemo, useState } from 'react';
+import AuthView from './components/AuthView';
+import ClientsListView from './components/ClientsListView';
+import CreateClientView from './components/CreateClientView';
+import Navigation from './components/Navigation';
 
-        <section className="grid gap-4 md:grid-cols-3">
-          {[
-            ['Authentification', 'Inscription, connexion et gestion de session.'],
-            ['Réservation', 'Parcours en 3 étapes pour choisir, confirmer et suivre un rendez-vous.'],
-            ['Tableaux de bord', 'Vues dédiées client, prestataire et administrateur.'],
-          ].map(([title, description]) => (
-            <article key={title} className="rounded-2xl border border-white/10 bg-slate-900/80 p-6">
-              <h2 className="text-xl font-medium text-white">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
-            </article>
-          ))}
-        </section>
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+
+const initialClientForm = {
+  email: '',
+  nom: '',
+  password: '',
+  telephone: '',
+  adresse: '',
+  dateNaissance: '',
+};
+
+export default function App() {
+  const [activeView, setActiveView] = useState('auth');
+  const [loginForm, setLoginForm] = useState({ username: 'admin', password: 'admin123' });
+  const [token, setToken] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [clientForm, setClientForm] = useState(initialClientForm);
+  const [clientMessage, setClientMessage] = useState('');
+
+  const isAuthenticated = useMemo(() => token.trim().length > 0, [token]);
+
+  const fetchClients = async () => {
+    try {
+      setLoadingClients(true);
+      const response = await fetch(`${API_BASE}/clients`);
+      if (!response.ok) {
+        throw new Error(`Erreur API (${response.status})`);
+      }
+      const data = await response.json();
+      setClients(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setClientMessage(`Impossible de charger les clients: ${error.message}`);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setAuthMessage('Connexion en cours...');
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Echec login (${response.status})`);
+      }
+
+      const data = await response.json();
+      setToken(data.token);
+      setAuthMessage(`Connecte en tant que ${data.username}`);
+      setActiveView('create');
+    } catch (error) {
+      setToken('');
+      setAuthMessage(`Login echoue: ${error.message}`);
+    }
+  };
+
+  const handleCreateClient = async (event) => {
+    event.preventDefault();
+
+    if (!isAuthenticated) {
+      setClientMessage('Vous devez vous connecter (JWT) avant de creer un client.');
+      return;
+    }
+
+    setClientMessage('Creation du client en cours...');
+
+    try {
+      const response = await fetch(`${API_BASE}/clients`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(clientForm),
+      });
+
+      if (!response.ok) {
+        const errorPayload = await response.text();
+        throw new Error(errorPayload || `Echec creation (${response.status})`);
+      }
+
+      const createdClient = await response.json();
+      setClientMessage(`Client cree avec succes (id=${createdClient.id}).`);
+      setClientForm(initialClientForm);
+      fetchClients();
+      setActiveView('list');
+    } catch (error) {
+      setClientMessage(`Creation echouee: ${error.message}`);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_5%_15%,rgba(34,211,238,0.2),transparent_35%),radial-gradient(circle_at_95%_5%,rgba(16,185,129,0.18),transparent_30%),linear-gradient(120deg,#020617,#0f172a,#111827)] px-4 py-8 text-slate-100 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
+        <Navigation activeView={activeView} onChange={setActiveView} isAuthenticated={isAuthenticated} />
+
+        <div className="flex-1 space-y-6">
+          <section className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl shadow-black/30 backdrop-blur sm:p-8">
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Sous-partie coherente</p>
+            <h1 className="mt-3 text-3xl font-semibold leading-tight text-white sm:text-5xl">
+              Interfaces separees pour la demo
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm text-slate-300 sm:text-base">
+              Le frontend est maintenant divise en vues distinctes: authentification, creation client, et liste clients.
+              Cela rend la demonstration plus lisible et plus professionnelle.
+            </p>
+          </section>
+
+          {activeView === 'auth' && (
+            <AuthView
+              loginForm={loginForm}
+              setLoginForm={setLoginForm}
+              onLogin={handleLogin}
+              authMessage={authMessage}
+              tokenPreview={isAuthenticated ? `${token.slice(0, 45)}...` : 'non connecte'}
+            />
+          )}
+
+          {activeView === 'create' && (
+            <CreateClientView
+              clientForm={clientForm}
+              setClientForm={setClientForm}
+              onCreateClient={handleCreateClient}
+              clientMessage={clientMessage}
+              isAuthenticated={isAuthenticated}
+            />
+          )}
+
+          {activeView === 'list' && (
+            <ClientsListView clients={clients} loadingClients={loadingClients} onRefresh={fetchClients} />
+          )}
+        </div>
       </div>
     </main>
   );

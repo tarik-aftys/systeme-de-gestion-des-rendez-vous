@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: appointment_db
+          MYSQL_USER: appointment_user
+          MYSQL_PASSWORD: appointment_password
+          MYSQL_ROOT_PASSWORD: root_password
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/appointment_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: appointment_user
+      SPRING_DATASOURCE_PASSWORD: appointment_password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            nc -z localhost 3306 && break
+            echo 'waiting for mysql...'
+            sleep 2
+          done
+
+      - name: Run backend tests
+        working-directory: backend
+        run: mvn -B -DskipTests=false test

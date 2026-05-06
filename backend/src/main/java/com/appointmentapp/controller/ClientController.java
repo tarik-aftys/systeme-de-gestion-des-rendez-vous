@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import org.hibernate.Hibernate;
 
 /**
  * REST Controller for Client management
@@ -32,10 +32,7 @@ public class ClientController {
      */
     @GetMapping
     public ResponseEntity<List<ClientDTO>> getAllClients() {
-        List<Client> clients = clientService.findAll();
-        List<ClientDTO> dtos = clients.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        List<ClientDTO> dtos = clientService.findAllDTOs();
         return ResponseEntity.ok(dtos);
     }
     
@@ -46,8 +43,8 @@ public class ClientController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ClientDTO> getClientById(@PathVariable Long id) {
-        return clientService.findById(id)
-                .map(client -> ResponseEntity.ok(convertToDTO(client)))
+        return clientService.findDTOById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -70,7 +67,8 @@ public class ClientController {
         client.setEstSupprime(false);
         
         Client savedClient = clientService.save(client);
-        return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(savedClient));
+        // convert within service transaction by fetching DTO
+        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.findDTOById(savedClient.getId()).orElseThrow());
     }
     
     /**
@@ -91,7 +89,7 @@ public class ClientController {
                     client.setAdresse(createDTO.getAdresse());
                     client.setDateNaissance(createDTO.getDateNaissance());
                     Client updated = clientService.save(client);
-                    return ResponseEntity.ok(convertToDTO(updated));
+                    return ResponseEntity.ok(clientService.findDTOById(updated.getId()).orElseThrow());
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -116,6 +114,7 @@ public class ClientController {
      * Helper method: Convert Client entity to DTO
      */
     private ClientDTO convertToDTO(Client client) {
+        // keep for backwards compatibility but avoid accessing lazy collections here
         ClientDTO dto = new ClientDTO();
         dto.setId(client.getId());
         dto.setEmail(client.getEmail());
@@ -126,7 +125,16 @@ public class ClientController {
         dto.setEstSupprime(client.getEstSupprime());
         dto.setAdresse(client.getAdresse());
         dto.setDateNaissance(client.getDateNaissance());
-        dto.setTotalRendezVous(client.getRendezVous().size());
+        int total = 0;
+        try {
+            if (Hibernate.isInitialized(client.getRendezVous())) {
+                total = client.getRendezVous() == null ? 0 : client.getRendezVous().size();
+            }
+        } catch (NoClassDefFoundError e) {
+            // Hibernate not on classpath in some test contexts — fall back safely
+            total = 0;
+        }
+        dto.setTotalRendezVous(total);
         return dto;
     }
 }

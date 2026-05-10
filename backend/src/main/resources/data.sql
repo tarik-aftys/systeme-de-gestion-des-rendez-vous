@@ -2,6 +2,9 @@
 INSERT IGNORE INTO `users` (`id`, `email`, `nom`, `password`, `role`, `statut`, `telephone`, `est_supprime`)
 VALUES (1, 'admin', 'Administrateur', '$2a$10$vM9L1.9/W2uK2u1N/K.hO.o.G0S7V.v/U.6G.Y.6G.Y.6G.Y.6G', 'ADMIN', 'ACTIF', '0600000000', b'0');
 
+INSERT IGNORE INTO `admins` (`id`)
+VALUES (1);
+
 -- 2. Insertion du Prestataire de test (Dr. Ayoub, Mot de passe : admin123)
 INSERT IGNORE INTO `users` (`id`, `email`, `nom`, `password`, `role`, `statut`, `telephone`, `est_supprime`)
 VALUES (4, 'dr.test@test.com', 'Dr. Ayoub Expert', '$2a$10$vM9L1.9/W2uK2u1N/K.hO.o.G0S7V.v/U.6G.Y.6G.Y.6G.Y.6G', 'PRESTATAIRE', 'ACTIF', '0600000000', b'0');

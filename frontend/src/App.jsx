@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import AuthView from './components/AuthView';
 import ClientsListView from './components/ClientsListView';
 import CreateClientView from './components/CreateClientView';
-import Navigation from './components/Navigation';
+import ClientLoginView from './components/ClientLoginView';
+import ClientHomeView from './components/ClientHomeView';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -13,13 +14,20 @@ const initialClientForm = {
   telephone: '',
   adresse: '',
   dateNaissance: '',
+  role: 'CLIENT' // Important pour tes boutons radio
 };
 
 export default function App() {
-  const [activeView, setActiveView] = useState('auth');
+  // On démarre sur l'inscription par défaut
+  const [activeView, setActiveView] = useState('create');
+
+  // Les états pour les formulaires
   const [loginForm, setLoginForm] = useState({ username: 'admin', password: 'admin123' });
+  const [clientLoginForm, setClientLoginForm] = useState({ username: '', password: '' }); // CORRIGÉ : Plus d'écran noir !
+
   const [token, setToken] = useState('');
   const [authMessage, setAuthMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [clients, setClients] = useState([]);
   const [loadingClients, setLoadingClients] = useState(false);
@@ -32,9 +40,7 @@ export default function App() {
     try {
       setLoadingClients(true);
       const response = await fetch(`${API_BASE}/clients`);
-      if (!response.ok) {
-        throw new Error(`Erreur API (${response.status})`);
-      }
+      if (!response.ok) throw new Error(`Erreur API (${response.status})`);
       const data = await response.json();
       setClients(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -48,7 +54,8 @@ export default function App() {
     fetchClients();
   }, []);
 
-  const handleLogin = async (event) => {
+  // Gère la connexion Admin ET Client
+  const handleLogin = async (event, formData) => {
     event.preventDefault();
     setAuthMessage('Connexion en cours...');
 
@@ -56,101 +63,158 @@ export default function App() {
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginForm),
+        body: JSON.stringify(formData), // Utilise formData dynamiquement
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || `Echec login (${response.status})`);
+        throw new Error(errorText || `Identifiants incorrects`);
       }
 
       const data = await response.json();
-      setToken(data.token);
-      setAuthMessage(`Connecte en tant que ${data.username}`);
-      setActiveView('create');
+          setToken(data.token);
+          setCurrentUser(data); //on stockeles infos (nom, role, etc.)
+          setAuthMessage(`Bienvenue ${data.username}`);
+
+          // LOGIQUE DE REDIRECTION SELON LE RÔLE
+          if (formData.username === 'admin') {
+            setActiveView('list');
+          } else {
+            // Pour un client, on le dirige vers son accueil
+            setActiveView('client-home');
+          }
     } catch (error) {
       setToken('');
-      setAuthMessage(`Login echoue: ${error.message}`);
+      setAuthMessage(`Échec : ${error.message}`);
     }
   };
 
   const handleCreateClient = async (event) => {
-    event.preventDefault();
+      event.preventDefault();
+      setClientMessage('Création du compte en cours...');
 
-    if (!isAuthenticated) {
-      setClientMessage('Vous devez vous connecter (JWT) avant de creer un client.');
-      return;
-    }
+      // 💡 L'ASTUCE EST ICI : On prépare un objet complet pour satisfaire le backend
+      const payloadToSend = {
+        ...clientForm,
+        adresse: clientForm.adresse || 'Adresse à compléter',
+        telephone: clientForm.telephone || '0000000000',
+        dateNaissance: clientForm.dateNaissance || '2000-01-01'
+      };
 
-    setClientMessage('Creation du client en cours...');
+      try {
+        const response = await fetch(`${API_BASE}/clients`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payloadToSend), //On envoie le payload complété
+        });
 
-    try {
-      const response = await fetch(`${API_BASE}/clients`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(clientForm),
-      });
+        if (!response.ok) {
+          const errorPayload = await response.text();
+          throw new Error(errorPayload || `Échec création (${response.status})`);
+        }
 
-      if (!response.ok) {
-        const errorPayload = await response.text();
-        throw new Error(errorPayload || `Echec creation (${response.status})`);
+        setClientMessage(`Succès ! Votre compte a bien été créé.`);
+        setClientForm(initialClientForm);
+
+        // Redirection automatique vers la connexion après 2 secondes
+        setTimeout(() => {
+          setClientMessage('');
+          setActiveView('client-login');
+        }, 2000);
+
+      } catch (error) {
+        setClientMessage(`Erreur : ${error.message}`);
       }
-
-      const createdClient = await response.json();
-      setClientMessage(`Client cree avec succes (id=${createdClient.id}).`);
-      setClientForm(initialClientForm);
-      fetchClients();
-      setActiveView('list');
-    } catch (error) {
-      setClientMessage(`Creation echouee: ${error.message}`);
-    }
-  };
+    };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_5%_15%,rgba(34,211,238,0.2),transparent_35%),radial-gradient(circle_at_95%_5%,rgba(16,185,129,0.18),transparent_30%),linear-gradient(120deg,#020617,#0f172a,#111827)] px-4 py-8 text-slate-100 sm:px-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
-        <Navigation activeView={activeView} onChange={setActiveView} isAuthenticated={isAuthenticated} />
+    <div className="relative min-h-screen bg-[#F7F9FA]">
 
-        <div className="flex-1 space-y-6">
-          <section className="rounded-3xl border border-white/15 bg-white/5 p-6 shadow-2xl shadow-black/30 backdrop-blur sm:p-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Sous-partie coherente</p>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight text-white sm:text-5xl">
-              Interfaces separees pour la demo
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm text-slate-300 sm:text-base">
-              Le frontend est maintenant divise en vues distinctes: authentification, creation client, et liste clients.
-              Cela rend la demonstration plus lisible et plus professionnelle.
-            </p>
-          </section>
+      {/* ================= VUES DE L'APPLICATION ================= */}
 
-          {activeView === 'auth' && (
-            <AuthView
-              loginForm={loginForm}
-              setLoginForm={setLoginForm}
-              onLogin={handleLogin}
-              authMessage={authMessage}
-              tokenPreview={isAuthenticated ? `${token.slice(0, 45)}...` : 'non connecte'}
-            />
-          )}
+      {activeView === 'auth' && (
+        <AuthView
+          loginForm={loginForm}
+          setLoginForm={setLoginForm}
+          onLogin={(e) => handleLogin(e, loginForm)} // Appel Admin
+          authMessage={authMessage}
+          tokenPreview={isAuthenticated ? `${token.slice(0, 45)}...` : 'non connecté'}
+        />
+      )}
 
-          {activeView === 'create' && (
-            <CreateClientView
-              clientForm={clientForm}
-              setClientForm={setClientForm}
-              onCreateClient={handleCreateClient}
-              clientMessage={clientMessage}
-              isAuthenticated={isAuthenticated}
-            />
-          )}
+      {activeView === 'create' && (
+        <CreateClientView
+          clientForm={clientForm}
+          setClientForm={setClientForm}
+          onCreateClient={handleCreateClient}
+          clientMessage={clientMessage}
+          onSwitchToLogin={() => setActiveView('client-login')}
+        />
+      )}
 
-          {activeView === 'list' && (
-            <ClientsListView clients={clients} loadingClients={loadingClients} onRefresh={fetchClients} />
-          )}
+      {activeView === 'client-login' && (
+        <ClientLoginView
+          loginForm={clientLoginForm}
+          setLoginForm={setClientLoginForm}
+          onLogin={(e) => handleLogin(e, clientLoginForm)} // Appel Client
+          authMessage={authMessage}
+          onSwitchToSignup={() => setActiveView('create')}
+        />
+      )}
+
+      {activeView === 'client-home' && (
+        <ClientHomeView
+          userName={currentUser?.nom}
+          onLogout={() => { setToken(''); setActiveView('client-login'); }}
+          onNavigate={setActiveView}
+        />
+      )}
+
+      {activeView === 'list' && (
+        <div className="p-8">
+          <ClientsListView clients={clients} loadingClients={loadingClients} onRefresh={fetchClients} />
+        </div>
+      )}
+
+      {/* ================= MENU FLOTTANT POUR LA DÉMO (En bas à droite) ================= */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 bg-white p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100">
+        <span className="text-[10px] uppercase font-bold text-gray-400 text-center tracking-widest mb-1">Menu Démo</span>
+
+        <div className="flex flex-col gap-1.5">
+          <button
+            onClick={() => setActiveView('create')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeView === 'create' ? 'bg-[#00A8B0] text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+          >
+            Inscription Client
+          </button>
+          <button
+            onClick={() => setActiveView('client-login')}
+            className={`px-4 py-2 text-xs font-bold rounded-lg transition-all ${activeView === 'client-login' ? 'bg-[#00A8B0] text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+          >
+            Connexion Client
+          </button>
+        </div>
+
+        <div className="w-full h-[1px] bg-gray-100 my-1"></div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveView('auth')}
+            className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg transition-all ${activeView === 'auth' ? 'bg-gray-800 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+          >
+            Auth Admin
+          </button>
+          <button
+            onClick={() => { setActiveView('list'); fetchClients(); }}
+            className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg transition-all ${activeView === 'list' ? 'bg-gray-800 text-white' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+          >
+            Liste
+          </button>
         </div>
       </div>
-    </main>
+
+    </div>
   );
 }

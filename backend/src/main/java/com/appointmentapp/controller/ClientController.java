@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import org.hibernate.Hibernate;
@@ -25,6 +26,7 @@ import org.hibernate.Hibernate;
 public class ClientController {
     
     private final ClientService clientService;
+    private final PasswordEncoder passwordEncoder;
     
     /**
      * GET: Retrieve all clients
@@ -58,17 +60,20 @@ public class ClientController {
         Client client = new Client();
         client.setEmail(createDTO.getEmail());
         client.setNom(createDTO.getNom());
-        client.setPassword(createDTO.getPassword());
+
+        // On crypte le mot de passe ici
+        client.setPassword(passwordEncoder.encode(createDTO.getPassword()));
+
         client.setTelephone(createDTO.getTelephone());
         client.setAdresse(createDTO.getAdresse());
         client.setDateNaissance(createDTO.getDateNaissance());
         client.setRole(RoleUser.CLIENT);
         client.setStatut("ACTIF");
         client.setEstSupprime(false);
-        
+
         Client savedClient = clientService.save(client);
-        // convert within service transaction by fetching DTO
-        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.findDTOById(savedClient.getId()).orElseThrow());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(clientService.findDTOById(savedClient.getId()).orElseThrow());
     }
     
     /**

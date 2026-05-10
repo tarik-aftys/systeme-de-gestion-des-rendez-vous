@@ -171,10 +171,11 @@ public class AppointmentApiIntegrationTest {
     }
 
     /**
-     * Test 5: Validate that POST without auth is rejected
+     * Test 5: Validate that PUT without auth is rejected (update requires ADMIN role)
      */
     @Test
     public void testPostWithoutAuthenticationIsRejected() {
+        // First, create a client with public registration
         ClientCreateDTO clientDTO = new ClientCreateDTO();
         clientDTO.setEmail("unauthorized@example.com");
         clientDTO.setNom("Unauthorized User");
@@ -183,11 +184,26 @@ public class AppointmentApiIntegrationTest {
         clientDTO.setAdresse("456 Test St");
         clientDTO.setDateNaissance(LocalDate.of(2000, 1, 1));
 
-        ResponseEntity<ClientDTO> response = restTemplate
+        ResponseEntity<ClientDTO> createdResponse = restTemplate
                 .postForEntity(API_BASE + "/clients", clientDTO, ClientDTO.class);
+        assertEquals(HttpStatus.CREATED, createdResponse.getStatusCode());
+        Long clientId = createdResponse.getBody().getId();
 
-        // Spring Security returns 403 Forbidden when authentication is required but missing
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        // Now try to UPDATE without authentication - should be rejected
+        ClientCreateDTO updateDTO = new ClientCreateDTO();
+        updateDTO.setEmail("updated@example.com");
+        updateDTO.setNom("Updated Name");
+        updateDTO.setPassword("newpassword123");
+        updateDTO.setTelephone("0700000002");
+        updateDTO.setAdresse("Updated St");
+        updateDTO.setDateNaissance(LocalDate.of(2000, 1, 1));
+
+        HttpEntity<ClientCreateDTO> request = new HttpEntity<>(updateDTO, new HttpHeaders());
+        ResponseEntity<ClientDTO> updateResponse = restTemplate
+                .exchange(API_BASE + "/clients/" + clientId, HttpMethod.PUT, request, ClientDTO.class);
+
+        // PUT requires ADMIN role - should be 403 without authentication
+        assertEquals(HttpStatus.FORBIDDEN, updateResponse.getStatusCode());
     }
 
     /**

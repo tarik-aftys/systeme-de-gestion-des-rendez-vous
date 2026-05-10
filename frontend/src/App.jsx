@@ -23,7 +23,7 @@ export default function App() {
 
   // Les états pour les formulaires
   const [loginForm, setLoginForm] = useState({ username: 'admin', password: 'admin123' });
-  const [clientLoginForm, setClientLoginForm] = useState({ username: '', password: '' }); // CORRIGÉ : Plus d'écran noir !
+  const [clientLoginForm, setClientLoginForm] = useState({ username: '', password: '' });
 
   const [token, setToken] = useState('');
   const [authMessage, setAuthMessage] = useState('');

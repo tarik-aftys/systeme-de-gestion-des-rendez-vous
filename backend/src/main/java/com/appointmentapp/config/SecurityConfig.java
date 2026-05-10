@@ -44,6 +44,8 @@ public class SecurityConfig {
                         // 2. LA LIGNE MANQUANTE : Autoriser l'inscription (Création de compte sans Token)
                         .requestMatchers(HttpMethod.POST, "/api/clients").permitAll()
 
+                        .requestMatchers(HttpMethod.PUT, "/api/clients/**").hasRole("ADMIN") //
+                        .requestMatchers(HttpMethod.DELETE, "/api/clients/**").hasRole("ADMIN") //
                         // 3. Autoriser React à vérifier les accès (CORS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 

@@ -83,18 +83,32 @@ public class ClientController {
      * @return Updated client or 404 if not found
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ClientDTO> updateClient(
+    public ResponseEntity<?> updateClient(
             @PathVariable Long id,
             @Valid @RequestBody ClientCreateDTO createDTO) {
-        
+
         return clientService.findById(id)
                 .map(client -> {
+                    // ✅ Vérification unicité email (seulement si l'email change)
+                    if (!client.getEmail().equalsIgnoreCase(createDTO.getEmail())) {
+                        if (clientService.emailExists(createDTO.getEmail())) {
+                            return ResponseEntity
+                                    .status(HttpStatus.CONFLICT)
+                                    .body("Cet email est déjà utilisé par un autre compte.");
+                        }
+                        client.setEmail(createDTO.getEmail()); // ✅ Ligne manquante
+                    }
+
                     client.setNom(createDTO.getNom());
                     client.setTelephone(createDTO.getTelephone());
                     client.setAdresse(createDTO.getAdresse());
                     client.setDateNaissance(createDTO.getDateNaissance());
+                    // ✅ On ne touche PAS au password ("NOPASSWORD" envoyé par le frontend est ignoré)
+
                     Client updated = clientService.save(client);
-                    return ResponseEntity.ok(clientService.findDTOById(updated.getId()).orElseThrow());
+                    return ResponseEntity.ok(
+                            clientService.findDTOById(updated.getId()).orElseThrow()
+                    );
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -2,15 +2,14 @@ package com.appointmentapp.domain;
 
 import com.appointmentapp.domain.enums.StatutRDV;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "rendez_vous")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class RendezVous {

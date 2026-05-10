@@ -1,48 +1,84 @@
-# Système de gestion de rendez-vous en ligne
+# Systeme de gestion de rendez-vous en ligne
 
-Plateforme de démonstration pour la gestion de prises de rendez-vous (backend Java / Spring Boot + frontend React). Ce dépôt contient le code source, la configuration Docker minimale et les scripts pour lancer l'application en local.
+Plateforme de demonstration pour la gestion de prises de rendez-vous (backend Java / Spring Boot + frontend React). Ce depot contient le code source, la configuration Docker minimale et les scripts pour lancer l'application en local.
 
-**Statut:** prototype — backend opérationnel, entités JPA et API de base implémentées.
+**Statut :** MVP fonctionnel — backend operationnel, entites JPA, API securisee par JWT, tunnel de reservation frontend et tableau de bord d'administration complet.
 
-**Dépôt:** [systeme-de-gestion-des-rendez-vous](https://github.com/tarik-aftys/systeme-de-gestion-des-rendez-vous)
+**Depot :** https://github.com/tarik-aftys/systeme-de-gestion-des-rendez-vous
 
-**Arborescence principale**
-- [backend](backend): Spring Boot 3 (Java 17), JPA/Hibernate, sécurité (JWT planifiée)
-- [frontend](frontend): React 18 + Vite + TailwindCSS
-- [docker-compose.yml](docker-compose.yml): MySQL, Redis, Adminer
+---
 
-**Technologies**
-- Java 17, Spring Boot 3.x
+## Arborescence principale
+
+- `backend` : Spring Boot 3 (Java 17), JPA/Hibernate, Spring Security (JWT operationnel).
+- `frontend` : React 18 + Vite + TailwindCSS (Interfaces Admin et Client).
+- `docker-compose.yml` : MySQL, Redis, Adminer.
+
+---
+
+## Technologies
+
+- Java 17
+- Spring Boot 3.x
 - Hibernate / JPA
+- Spring Security & JWT (JSON Web Tokens)
 - MySQL 8
-- React 18, Vite, TailwindCSS
+- React 18
+- Vite
+- TailwindCSS
 - Docker / Docker Compose
 
-## Prérequis
-- Java 17
-- Maven (ou utiliser le wrapper si présent)
-- Node.js 18+ et npm
-- Docker & Docker Compose (optionnel mais recommandé pour la DB)
+---
 
-## Installation & lancement (rapide)
+## Fonctionnalites implementees
 
-1) Démarrer les services Docker (MySQL, Redis, Adminer)
+- Authentification JWT : Connexion securisee et blocage automatique des comptes supprimes.
+- Espace Client : Tableau de bord dynamique et tunnel de reservation complet (choix du prestataire, service, creneau et confirmation).
+- Espace Administrateur : Tableau de bord avec edition en ligne (inline editing) des informations clients et suppression logique (soft delete).
+- Base de donnees automatisee : Initialisation automatique des donnees de test (prestataires, services, creneaux) au lancement du backend.
+
+---
+
+# Installation & lancement
+
+## 1. Demarrer les services Docker
 
 ```bash
 docker compose up -d
 ```
 
-2) Lancer le backend
+---
+
+## 2. Lancer le backend
+
+Le backend utilise un fichier `data.sql` pour populer automatiquement la base de donnees avec des comptes de test (Admin, Prestataire, etc.) et des creneaux.
 
 ```bash
 cd backend
 mvn clean spring-boot:run
 ```
 
-- Le backend écoute par défaut sur `http://localhost:8080`.
-- Point de santé: `http://localhost:8080/api/health` → renvoie `{"status":"UP"}`.
+Le backend ecoute par defaut sur :
 
-3) Lancer le frontend (dev)
+```text
+http://localhost:8080
+```
+
+### Point de sante
+
+```text
+http://localhost:8080/api/health
+```
+
+Retour attendu :
+
+```json
+{"status":"UP"}
+```
+
+---
+
+## 3. Lancer le frontend
 
 ```bash
 cd frontend
@@ -50,145 +86,148 @@ npm install
 npm run dev
 ```
 
-## Base de données
-- Connexion MySQL (développement): `jdbc:mysql://localhost:3306/appointment_app`
-- Utilisateur / mot de passe: `appointment_user` / `appointment_password`
-- Adminer UI: `http://localhost:8081` (pour vérifier les tables)
+L'interface est accessible sur :
 
-## Exécuter les tests
-
-Backend (JUnit):
-
-```bash
-cd backend
-mvn test
+```text
+http://localhost:5173
 ```
 
-Frontend (si tests ajoutés):
+---
 
-```bash
-cd frontend
-npm test
+# Base de donnees
+
+L'application utilise une strategie d'heritage `JOINED` pour les utilisateurs (`Users`, `Clients`, `Prestataires`).
+
+## Connexion MySQL
+
+```text
+jdbc:mysql://localhost:3306/appointment_app
 ```
 
-## Structure du backend
-- `com.appointmentapp.domain`: entités JPA (User, Client, Prestataire, Service, Creneau, RendezVous, Paiement, Avis, Notification)
-- `com.appointmentapp.controller`: endpoints REST
-- `com.appointmentapp.config`: configuration Spring (CORS, sécurité)
+### Identifiants
 
-## API — Endpoints rapides
+```text
+Utilisateur : appointment_user
+Mot de passe : appointment_password
+```
 
-Base URL: `http://localhost:8080`
+### Adminer
 
-### Clients
-- GET  /api/clients
-- GET  /api/clients/{id}
-- POST /api/clients
-	- Body JSON: {"email","nom","password","telephone","adresse","dateNaissance"}
-- PUT  /api/clients/{id}
-- DELETE /api/clients/{id} (soft)
+```text
+http://localhost:8081
+```
 
-### Users
-- GET  /api/users
-- GET  /api/users/{id}
-- POST /api/users
-- PUT  /api/users/{id}
-- DELETE /api/users/{id}
+---
 
-### Prestataires
-- GET  /api/prestataires
-- GET  /api/prestataires/{id}
-- POST /api/prestataires
-- PUT  /api/prestataires/{id}
-- DELETE /api/prestataires/{id} (soft)
+# API — Endpoints principaux
 
-### Services
-- GET  /api/services
-- GET  /api/services/available
-- GET  /api/services/{id}
-- GET  /api/services/search?name=xxx
-- POST /api/services  (Body: {"nom","description","prix","duree","estDisponible"})
-- PUT  /api/services/{id}
-- PATCH /api/services/{id}/availability?available=true
-- DELETE /api/services/{id}
+## Base URL
 
-### Créneaux
-- GET  /api/creneaux
-- GET  /api/creneaux/{id}
-- GET  /api/creneaux/prestataire/{prestataireId}
-- POST /api/creneaux  (Body: {"dateDebut","dateFin","prestataireId","serviceId"})
-- DELETE /api/creneaux/{id}
+```text
+http://localhost:8080/api
+```
 
-### Rendez‑Vous
-- GET  /api/rendez-vous
-- GET  /api/rendez-vous/{id}
-- GET  /api/rendez-vous/client/{clientId}
-- POST /api/rendez-vous  (Body: {"date","clientId","prestataireId","serviceId","creneauId"})
-- PUT  /api/rendez-vous/{id}/cancel
-- DELETE /api/rendez-vous/{id}
+---
 
-### Paiements
-- GET  /api/paiements
-- GET  /api/paiements/{id}
-- GET  /api/paiements/status/pending
-- GET  /api/paiements/status/{statut}
-- POST /api/paiements  (Body: {"montant","datePaiement","statut","methodePaiement","rendezVousId"})
-- PUT  /api/paiements/{id}
-- PATCH /api/paiements/{id}/status?newStatus=PAYE
-- DELETE /api/paiements/{id}
+## Authentification & securite
 
-### Avis
-- GET  /api/avis
-- GET  /api/avis/{id}
-- GET  /api/avis/rendez-vous/{rendezVousId}
-- GET  /api/avis/service/{serviceId}
-- GET  /api/avis/service/{serviceId}/average-rating
-- POST /api/avis  (Body: {"note","commentaire","clientId","rendezVousId","serviceId"})
-- PUT  /api/avis/{id}
-- DELETE /api/avis/{id}
+### Connexion
 
-### Notifications
-- GET  /api/notifications/user/{userId}
-- POST /api/notifications  (Body: {"userId","type","contenu"})
-- PATCH /api/notifications/{id}/read
+```http
+POST /auth/login
+```
 
-## Exemples curl
+Retourne un token JWT.
 
-Créer un client:
+La majorite des routes suivantes necessitent le header HTTP :
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+## Clients
+
+```http
+GET    /clients
+GET    /clients/{id}
+POST   /clients
+PUT    /clients/{id}
+DELETE /clients/{id}
+```
+
+- `GET /clients` : Administration uniquement
+- `POST /clients` : Inscription publique
+- `PUT /clients/{id}` : Modification (Admin)
+- `DELETE /clients/{id}` : Suppression logique (Admin)
+
+---
+
+## Prestataires & Services
+
+```http
+GET /prestataires
+GET /services/available
+GET /services/search?name=xxx
+```
+
+---
+
+## Creneaux & Rendez-Vous
+
+```http
+GET  /creneaux/prestataire/{prestataireId}
+GET  /rendez-vous/client/{clientId}
+POST /rendez-vous
+```
+
+- `GET /rendez-vous/client/{clientId}` : Historique client
+- `POST /rendez-vous` : Creation de reservation
+
+---
+
+# Exemples cURL
+
+## Authentification (recuperation du JWT)
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+```
+
+---
+
+## Creer un client (inscription publique)
+
 ```bash
 curl -X POST http://localhost:8080/api/clients \
-	-H "Content-Type: application/json" \
-	-d '{"email":"alice@example.com","nom":"Alice","password":"secret123","telephone":"0600000000","adresse":"1 rue Exemple","dateNaissance":"1995-04-12"}'
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","nom":"Alice","password":"secret123","telephone":"0600000000","adresse":"1 rue Exemple","dateNaissance":"1995-04-12"}'
 ```
 
-Lister les services disponibles:
+---
+
+## Lister les clients (JWT Admin requis)
+
 ```bash
-curl http://localhost:8080/api/services/available
+curl http://localhost:8080/api/clients \
+  -H "Authorization: Bearer VOTRE_TOKEN_ICI"
 ```
 
-Créer un rendez‑vous:
-```bash
-curl -X POST http://localhost:8080/api/rendez-vous \
-	-H "Content-Type: application/json" \
-	-d '{"date":"2026-05-12T14:30:00","clientId":1,"prestataireId":2,"serviceId":5,"creneauId":10}'
-```
+---
 
-Marquer un paiement comme payé:
-```bash
-curl -X PATCH "http://localhost:8080/api/paiements/42/status?newStatus=PAYE"
-```
+# Tests d'integration
 
-## Tests d'intégration
+Les tests d'integration couvrent les flux principaux de l'API.
 
-Les tests d'intégration couvrent les flux principaux de l'API : création de client, service, rendez-vous et paiement.
-
-### Lancer tous les tests
+## Lancer tous les tests
 
 ```bash
 cd backend
 mvn clean verify
 ```
-
 ### Lancer uniquement les tests d'intégration
 
 ```bash
@@ -196,21 +235,15 @@ cd backend
 mvn test -Dtest=AppointmentApiIntegrationTest
 ```
 
-### Lancer les tests sans accès à la BD réelle (H2 en mémoire)
+
+## Lancer les tests avec H2 en memoire
 
 ```bash
 cd backend
 mvn test -Dspring.profiles.active=test
 ```
 
-### Configuration de sécurité pour les tests
-
-Les tests utilisent HTTP Basic Authentication avec :
-- **Identifiant:** admin
-- **Mot de passe:** admin123
-
-Les endpoints GET sont publics (pas d'authentification requise).
-Les endpoints POST/PUT/PATCH/DELETE nécessitent l'authentification HTTP Basic.
+---
 
 ### Cas de test couverts
 

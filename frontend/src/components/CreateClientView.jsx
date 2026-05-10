@@ -1,11 +1,11 @@
 import React from 'react';
 
-export default function CreateClientView({ 
-  clientForm, 
-  setClientForm, 
-  onCreateClient, 
-  clientMessage, 
-  onSwitchToLogin 
+export default function CreateClientView({
+  clientForm,
+  setClientForm,
+  onCreateClient,
+  clientMessage,
+  onSwitchToLogin
 }) {
 
   // Gestion de la saisie des champs classiques et des boutons radio

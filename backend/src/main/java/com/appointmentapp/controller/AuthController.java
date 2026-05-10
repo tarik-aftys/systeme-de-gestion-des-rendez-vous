@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -39,7 +40,10 @@ public class AuthController {
         User user = userRepository.findByEmail(loginRequest.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-// On ajoute user.getId() à la fin (5 paramètres au total)
+        if (user.getEstSupprime()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Ce compte a été supprimé. Contactez l'administrateur.");
+        }
         return ResponseEntity.ok(new LoginResponse(
                 token,
                 "Bearer",

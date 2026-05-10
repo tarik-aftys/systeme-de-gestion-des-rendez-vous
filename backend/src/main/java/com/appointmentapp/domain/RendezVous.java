@@ -37,11 +37,13 @@ public class RendezVous {
     @JoinColumn(name = "service_id")
     private Service service;
 
-    @OneToOne(optional = false, cascade = CascadeType.ALL)
+    // 👇 1. On retire le cascade = CascadeType.ALL
+    @OneToOne(optional = false)
     @JoinColumn(name = "creneau_id", unique = true)
     private Creneau creneau;
 
-    @OneToOne(optional = false, cascade = CascadeType.ALL)
+    // 👇 2. On retire le cascade et on met optional = true (car on a temporairement désactivé les paiements)
+    @OneToOne(optional = true)
     @JoinColumn(name = "paiement_id", unique = true)
     private Paiement paiement;
 

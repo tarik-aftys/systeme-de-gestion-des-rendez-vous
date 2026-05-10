@@ -36,12 +36,16 @@ public class AuthController {
 
         String token = tokenProvider.generateToken(loginRequest.getUsername());
 
-        // On renvoie une réponse simple
+        User user = userRepository.findByEmail(loginRequest.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+// On ajoute user.getId() à la fin (5 paramètres au total)
         return ResponseEntity.ok(new LoginResponse(
                 token,
                 "Bearer",
-                loginRequest.getUsername(),
-                "Utilisateur" // Valeur par défaut simple
+                user.getEmail(),
+                user.getNom(),
+                user.getId() //
         ));
     }
 }

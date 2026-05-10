@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function ClientHomeView({ onLogout, onNavigate, userName }) {
+export default function ClientHomeView({ onLogout, onNavigate, userName, appointments }) { // 👈 On récupère "appointments" ici
   const [searchForm, setSearchForm] = useState({
     motif: '',
     date: ''
@@ -47,24 +47,42 @@ export default function ClientHomeView({ onLogout, onNavigate, userName }) {
           Bonjour {userName || 'Cher Client'}, prêt pour votre prochain rendez-vous ?
         </h1>
 
-        {/* Section : Prochain Rendez-vous */}
+        {/* 💡 LA LOGIQUE DYNAMIQUE : Bloc bleu si RDV, bloc vide sinon */}
         <section>
-          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-[0.15em]">Votre prochain rendez-vous</span>
-              <div className="flex items-baseline gap-4 pt-2">
-                <h2 className="text-2xl font-bold text-[#374151]">Jeudi 7 Mai 2026 à 10:00</h2>
-                <span className="text-[#00A8B0] font-medium text-lg">Consultation Génie Logiciel</span>
+          {appointments && appointments.length > 0 ? (
+            <div className="bg-[#00A8B0] rounded-[24px] shadow-lg shadow-[#00A8B0]/30 border border-transparent p-8 flex flex-col md:flex-row items-center justify-between gap-6 text-white relative overflow-hidden">
+              <div className="space-y-1 z-10">
+                <span className="text-[11px] font-bold text-white/80 uppercase tracking-[0.15em]">Votre prochain rendez-vous</span>
+                <div className="flex items-baseline gap-4 pt-2">
+                  <h2 className="text-2xl font-bold">
+                    {/* Formatage dynamique de la date */}
+                    {new Date(appointments[0].date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute:'2-digit' }).replace(':', 'h')}
+                  </h2>
+                </div>
+                <p className="text-white/90 text-sm mt-2">
+                    Service : <span className="font-bold">{appointments[0].serviceName || "Consultation Génie Logiciel"}</span>
+                </p>
               </div>
+              <button className="text-sm font-bold text-[#00A8B0] bg-white hover:bg-gray-50 transition-colors border border-white px-6 py-3 rounded-xl z-10 shadow-sm">
+                  Détails
+              </button>
+
+              {/* Petit effet décoratif en fond */}
+              <div className="absolute -right-10 -top-10 w-48 h-48 bg-white opacity-5 rounded-full blur-2xl"></div>
             </div>
-            <button className="text-sm font-bold text-[#9CA3AF] hover:text-[#374151] transition-colors border border-gray-200 px-4 py-2 rounded-lg">
-                Modifier
-            </button>
-          </div>
+          ) : (
+            <div className="bg-white p-8 rounded-[24px] border border-dashed border-gray-300 text-center text-gray-400 py-12">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </div>
+                <p className="font-medium text-lg">Vous n'avez aucun rendez-vous prévu.</p>
+                <p className="text-sm mt-1">Utilisez la recherche rapide ci-dessous pour réserver.</p>
+            </div>
+          )}
         </section>
 
         {/* Section : Recherche Rapide (Formulaire Blanc) */}
-        <section className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-10 max-w-3xl">
+        <section className="bg-white rounded-[24px] shadow-sm border border-gray-100 p-10 max-w-3xl relative z-10">
           <h3 className="text-xl font-bold text-[#00A8B0] mb-8">Recherche rapide</h3>
 
           <div className="space-y-6">
@@ -92,10 +110,10 @@ export default function ClientHomeView({ onLogout, onNavigate, userName }) {
               />
             </div>
 
-            {/* Bouton Nouvelle Réservation */}
+            {/* 💡 LA REDIRECTION : Le bouton redirige maintenant vers "booking" */}
             <div className="pt-4">
               <button
-                onClick={() => alert("Recherche lancée...")}
+                onClick={() => onNavigate('booking')}
                 className="bg-[#00A8B0] hover:bg-[#009299] text-white font-bold py-4 px-10 rounded-xl flex items-center gap-2 shadow-lg shadow-[#00A8B0]/20 transition-all uppercase text-sm"
               >
                 <span>+</span> Nouvelle réservation
